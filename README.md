@@ -1,36 +1,33 @@
 # AI Event Outreach Generator
 
-An AI-powered web application that generates professional invitation emails for any event using Groq LLM and sends them via email.
+An AI-powered web application that generates and sends professional event invitation emails.
 
 ## Features
 
-* AI-generated event invitation emails
-* Custom event type support
-* Email delivery integration
-* Flask-based web application
-* Professional email formatting
+- AI-generated invitation emails
+- Multiple event types
+- Automatic email delivery
+- Professional email templates
+- Responsive UI
 
 ## Tech Stack
 
-* Python
-* Flask
-* Groq AI
-* HTML/CSS
-* Resend Email API
+- Python
+- Flask
+- Groq API
+- Gmail SMTP
+- Bootstrap 5
 
-## Screenshots
+## Installation
 
-(Add screenshots here)
+pip install -r requirements.txt
 
-## Future Enhancements
+Create a .env file:
 
-* Event date & venue support
-* Bulk invitations
-* Authentication system
-* Email scheduling
-* Analytics dashboard
+GROQ_API_KEY=your_key
+EMAIL_USER=your_email
+EMAIL_PASSWORD=your_app_password
 
-## Author
+Run:
 
-Charan Sai
-
+python app.py
