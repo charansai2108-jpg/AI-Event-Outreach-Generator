@@ -1,23 +1,22 @@
 from flask import Flask, render_template, request
 from groq import Groq
 from dotenv import load_dotenv
-
+import resend
 import os
-import smtplib
-from email.mime.text import MIMEText
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-# Get API Keys
+# API Keys
 groq_api_key = os.getenv("GROQ_API_KEY")
-email_user = os.getenv("EMAIL_USER")
-email_password = os.getenv("EMAIL_PASSWORD")
+resend.api_key = os.getenv("RESEND_API_KEY")
 
-# Initialize Groq Client
-client = Groq(api_key=groq_api_key)
+# Groq Client
+client = Groq(
+    api_key=groq_api_key
+)
 
 
 @app.route("/")
@@ -28,7 +27,7 @@ def home():
 @app.route("/generate", methods=["POST"])
 def generate():
 
-    # Get form data
+    # Form Data
     name = request.form["name"]
     email = request.form["email"]
 
@@ -66,49 +65,43 @@ Requirements:
 Generate only the email body.
 """
 
-    # Generate Email
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    generated_email = response.choices[0].message.content
-
-    # Send Email via Gmail SMTP
     try:
 
-        msg = MIMEText(generated_email)
-
-        msg["Subject"] = f"Invitation: {event_title}"
-        msg["From"] = email_user
-        msg["To"] = email
-
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-
-        server.login(
-            email_user,
-            email_password
+        # Generate Email using Groq
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
         )
 
-        server.sendmail(
-            email_user,
-            email,
-            msg.as_string()
-        )
+        generated_email = response.choices[0].message.content
 
-        server.quit()
+        # Send Email using Resend
+        try:
 
-        status = f"Email sent successfully to {email}"
+            resend.Emails.send(
+                {
+                    "from": "onboarding@resend.dev",
+                    "to": [email],
+                    "subject": f"Invitation: {event_title}",
+                    "html": generated_email.replace("\n", "<br>")
+                }
+            )
 
-    except Exception as e:
+            status = f"Email sent successfully to {email}"
 
-        status = f"Email sending failed: {str(e)}"
+        except Exception as email_error:
+
+            status = f"Email sending failed: {str(email_error)}"
+
+    except Exception as ai_error:
+
+        generated_email = "Failed to generate email."
+        status = f"AI Error: {str(ai_error)}"
 
     return render_template(
         "result.html",
@@ -119,4 +112,8 @@ Generate only the email body.
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
